@@ -3,7 +3,7 @@ import threading
 import time
 import ssl     # SSL/TLS for secure communication with the broker
 
-HOST = "10.1.1.5"
+HOST = "localhost"
 PORT     = 9010
 FORMAT   = "utf-8"
 CERTFILE = "server.crt" # Broker's certificate for identity verification
@@ -28,7 +28,7 @@ def connect(host=HOST, port=PORT):
 
     raw_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#create socket
     #this says apply all rules in "context" to this scket and connects to broker at localhost:9000
-    ssl_sock = context.wrap_socket(raw_sock, server_hostname="10.1.1.5")
+    ssl_sock = context.wrap_socket(raw_sock, server_hostname="localhost")
 
     try:
         ssl_sock.connect((host, port))
@@ -139,10 +139,17 @@ def receive_messages(sock):
                     content = f"[{topic.upper()}] {message}"
                     width   = max(len(content) + 4, 30)
 
-                    print("\n" + "═" * width)
-                    print(f"║ {content:<{width - 4}} ║")
-                    print(f"║  {timestamp}  |  msg #{count:<{width - 20}} ║")
-                    print("═" * width + "\n")
+                    width = 50
+                    PURPLE = "\033[95m"
+                    RESET = "\033[0m"
+
+                    print("\n" + PURPLE + "╔" + "═" * (width - 2) + "╗" + RESET)
+
+                    print(PURPLE + "║ " + RESET + f"{content.center(width - 4)}" + PURPLE + " ║" + RESET)
+
+                    print(PURPLE + "║ " + RESET + f"{timestamp}  |  msg #{count}".center(width - 4) + PURPLE + " ║" + RESET)
+
+                    print(PURPLE + "╚" + "═" * (width - 2) + "╝" + RESET + "\n")
                     #end ="" cursor stays in the same line after printing and 
                     # When a message arrives and prints, flush=True ensures the input prompt is immediately shown again without delay.
                     print("Choice: ", end="", flush=True) # Re-prompt
@@ -206,6 +213,10 @@ def main():
 
             if not topic:
                 print("[ERROR] Topic name cannot be empty.")
+                continue
+
+            if topic not in current_topics:
+                print(f"[ERROR] '{topic}' is not an available topic. Choose from: {current_topics}")
                 continue
 
             if topic in subscribed_topics:

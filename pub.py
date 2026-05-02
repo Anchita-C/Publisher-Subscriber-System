@@ -6,7 +6,7 @@ import threading
 import ssl          
 
 
-HOST        = "10.1.1.5"
+HOST        = "localhost"
 PORT        = 9010
 HEADER_SIZE = 10
 FORMAT      = "utf-8"
@@ -43,7 +43,7 @@ def connect(host=HOST, port=PORT): #connects to publisher port 9000 (broker)
     raw_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # Wrap the raw socket with SSL before connecting
-    ssl_sock = context.wrap_socket(raw_sock, server_hostname="10.1.1.5")
+    ssl_sock = context.wrap_socket(raw_sock, server_hostname="localhost")
 
     try:
         ssl_sock.connect((host, port))
@@ -108,26 +108,6 @@ def random_news(topics):
 
 
 
-def auto_publish(sock, lock, topics, delay=2):
-    print(f"[AUTO MODE] Streaming every {delay}s — Ctrl+C to stop\n")
-    count = 0
-    start = time.time()
-    try:
-        while True:
-            topic, msg = random_news(topics)
-            publish(sock, topic, msg, lock)
-            count += 1 #msgs
-            elapsed = time.time() - start
-            rate    = count / elapsed if elapsed > 0 else 0
-            print(f"[AUTO] {topic} → {msg}  |  total: {count}  rate: {rate:.1f} msg/s")
-            time.sleep(delay)
-    except KeyboardInterrupt:
-        elapsed = time.time() - start
-        print(f"\n[AUTO STOPPED] Sent {count} messages in {elapsed:.1f}s "
-              f"({count/elapsed:.2f} msg/s)")
-
-
-
 def stress_test(sock, lock, topics, n=1000):
     print(f"\n[STRESS TEST] Launching {n} concurrent publish threads...")
     threads = []
@@ -175,9 +155,8 @@ def main():
         print(f"Active topics : {active_topics}")
         print("1. Manual Publish")
         print("2. Create New Topic")
-        print("3. Auto News Stream")
-        print("4. Stress Test (performance benchmark)")
-        print("5. Exit")
+        print("3. Stress Test (performance benchmark)")
+        print("4. Exit")
 
         choice = input("Choice: ").strip()
 
@@ -209,20 +188,13 @@ def main():
 
         elif choice == "3":
             try:
-                delay = float(input("Delay between messages (seconds, default 2): ").strip() or "2")
-            except ValueError:
-                delay = 2.0
-            auto_publish(sock, lock, active_topics, delay)
-
-        elif choice == "4":
-            try:
                 n = int(input("Number of messages to send: ").strip())
             except ValueError:
                 print("[ERROR] Please enter a valid integer.")
                 continue
             stress_test(sock, lock, active_topics, n)
 
-        elif choice == "5":
+        elif choice == "4":
             print("[EXIT] Closing secure connection...")
             try:
                 sock.close()
@@ -231,7 +203,7 @@ def main():
             break
 
         else:
-            print("[!] Invalid choice. Enter 1-5.")
+            print("[!] Invalid choice. Enter 1-4.")
 
 
 if __name__ == "__main__":
